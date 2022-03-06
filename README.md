@@ -2,6 +2,12 @@
 
 ## Setup
 
+Set .env
+```
+cp .env.example .env
+```
+
+Then
 
 ```
 python3 -m venv venv
