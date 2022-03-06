@@ -7,7 +7,7 @@
   <div style="border: 2px solid red;">
     <p>This is a demo. The server side component is simulated client side.</p>
     <p>In relatity, <a href="https://developer.mozilla.org/en-US/docs/Web/API/Web_Authentication_API#registration">the challenge <em>must</em> be sent by the server</a>.
-  </div>
+  </div>  
 
   <div id="output" style="border: 1px solid black;"></div>
 
@@ -80,93 +80,33 @@ signInForm.addEventListener("submit", function(e) {
 
 // Register a user
 document.getElementById("register").addEventListener('click', function(e) {
-  // register / create a new credential
-  const randomStringFromServer = "D\x96\xf4\xe9\x184{\x04j\xf5\xa4\x0f\xf7\xd0\x01Y\xf4\x98__Z\xf0\xab7\xeb\xa8\xc4E\xd6\x1d\xa9\x8c\x95B[\x0b4'\x97\x8a\x06\xe7\x1b\xd0\xa1@W\x186\x7fR\xa4\xcb\xdf{\x97m\xda\x89\xdciy\xd0\xac"
-
-const publicKeyCrendentialCreationOptions = {
-        "challenge": Uint8Array.from(
-    randomStringFromServer, c => c.charCodeAt(0)),
-        "rp": {
-            "name": "Karma Computing",
-            /* Id not required, and is OK to not provide
-            since the challange includes the origin
-            when generating the attestationObject
-            */
-            /*"id": "localhost" */
-        },
-        "user": {
-            "name": "Bob",
-            "displayName": "Bob",
-            "id": Uint8Array.from(
-      "UZSL85T9AFC", c => c.charCodeAt(0))
-        },
-        /* https://w3c.github.io/webauthn/#dom-publickeycredentialcreationoptions-pubkeycredparams */
-        "pubKeyCredParams": [
-            {
-                "type": "public-key",
-                "alg": -7
-            },
-            {
-                "type": "public-key",
-                "alg": -35
-            },
-            {
-                "type": "public-key",
-                "alg": -36
-            },
-            {
-                "type": "public-key",
-                "alg": -257
-            },
-            {
-                "type": "public-key",
-                "alg": -258
-            },
-            {
-                "type": "public-key",
-                "alg": -259
-            },
-            {
-                "type": "public-key",
-                "alg": -37
-            },
-            {
-                "type": "public-key",
-                "alg": -38
-            },
-            {
-                "type": "public-key",
-                "alg": -39
-            },
-            {
-                "type": "public-key",
-                "alg": -8
-            }
-        ],
-        "authenticatorSelection": {A
-            /* https://www.w3.org/TR/webauthn-2/#dom-authenticatorselectioncriteria-requireresidentkey */
-            /* "requireResidentKey": false, */
-            "userVerification": "preferred",
-            "authenticatorAttachment": "platform"
-        },
-        "timeout": 60000,
-        "attestation": "direct",
-}
-
-  createCredential(publicKeyCrendentialCreationOptions);
+  fetch('/register/chris')
+  .then(response => response.json())
+  .then(publicKeyCrendentialCreationOptions => {
+    console.log(publicKeyCrendentialCreationOptions);
+    createCredential(publicKeyCrendentialCreationOptions);
+  });
 });
 
 
 async function createCredential(publicKeyCrendentialCreationOptions) {
   log("in createCredential");
+  // Decode base64 parts to Uint8Array
+
+  // Decode challenge from base64 to Uint8Array
+  publicKeyCrendentialCreationOptions['challenge'] = Uint8Array.from(atob(publicKeyCrendentialCreationOptions['challenge']));
+  // Decode user->id from base64 to Uint8Array
+  publicKeyCrendentialCreationOptions['user']['id'] = Uint8Array.from(atob(publicKeyCrendentialCreationOptions['user']['id']));
+
   
   const crendential = await navigator.credentials.create({
     publicKey: publicKeyCrendentialCreationOptions,
     UserVerificationRequirement: {}
-  }).then((creds) => { log(creds)});
+  }).then((creds) => { 
+    log(creds);
+  });
 }
   
-
 // Authenticate existing user
 document.getElementById("authenticate").addEventListener('click', function(e) {
   navigator.credentials.get(getCredentialDefaultArgs).then((creds) => { console.log(creds)});
