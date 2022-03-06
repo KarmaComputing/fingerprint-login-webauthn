@@ -16,7 +16,7 @@ pip install -r requirements.txt
 ```
 ## Run locally
 ```
-uvicorn --reload app:app
+uvicorn --reload main:app
 ```
 
 Visit: http://localhost:8000/
