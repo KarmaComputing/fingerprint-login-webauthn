@@ -19,7 +19,6 @@ async def homepage(request):
 
 
 async def register_request(request):
-    breakpoint()
     username = request.path_params.get("username")
     if username is None:
         return JSONResponse({"error", "username cannot be empty"})
