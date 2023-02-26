@@ -23,7 +23,14 @@ async def register_request(request):
     if username is None:
         return JSONResponse({"error", "username cannot be empty"})
 
-    user_id = base64.b64encode(generate_secret()).decode("utf-8")
+    # See https://www.w3.org/TR/webauthn-2/#sctn-user-handle-privacy
+    # and https://www.w3.org/TR/webauthn-2/#dom-publickeycredentialuserentity-id
+    # It is RECOMMENDED to let the user handle be 64 random bytes, and store this value in the user’s account.
+    # authentication and authorization decisions MUST be made on the basis of this id member, not the displayName nor name members.
+    # See Section 6.1 of [RFC8266]
+    # Note we send user_id base64 encoded so that it may be serialized into a JSON string which is returned to the browser
+    user_id = base64.b64encode(generate_secret(length=64)).decode("utf-8")
+
     challenge = base64.b64encode(generate_secret()).decode("utf-8")
 
     publicKeyCrendentialCreationOptions = {
@@ -63,11 +70,26 @@ async def register_request(request):
     return JSONResponse(publicKeyCrendentialCreationOptions)
 
 
+async def receiveAttestationObject(request):
+    """See step 5 of: https://developer.mozilla.org/en-US/docs/Web/API/Web_Authentication_API#registration"""
+    data = await request.json()
+    breakpoint()
+    return "OK"
+
+
 async def health(request):
     return JSONResponse({"healthy": True})
 
 
 app = Starlette(
     debug=True,
-    routes=[Route("/", homepage), Route("/register/{username}", register_request)],
+    routes=[
+        Route("/", homepage),
+        Route("/register/{username}", register_request),
+        Route(
+            "/register/sendAttestationObject",
+            receiveAttestationObject,
+            methods=["POST"],
+        ),
+    ],
 )

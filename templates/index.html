@@ -62,6 +62,10 @@
       <br /><br /><br />
     </div>
 
+    <div id="device-registration-complete" style="display: none">
+      <h3>✅ Device Registration Complete</h3>
+    </div>
+
 <!-- Note: This code does not run from top to bottom -->
 <!-- Note: Run from localhost (not 127.0.0.1) or a https address -->
 
@@ -90,11 +94,18 @@ document.getElementById("register").addEventListener('click', function(e) {
 
 async function createCredential(publicKeyCrendentialCreationOptions) {
   log("in createCredential");
-  // Decode base64 parts to Uint8Array
+  // Decode base64 parts to Uint8Array & Webauthn createCredential
 
   // Decode challenge from base64 to Uint8Array
   publicKeyCrendentialCreationOptions['challenge'] = Uint8Array.from(atob(publicKeyCrendentialCreationOptions['challenge']));
+  
   // Decode user->id from base64 to Uint8Array
+  // See https://www.w3.org/TR/webauthn-2/#sctn-user-handle-privacy
+  // and https://www.w3.org/TR/webauthn-2/#dom-publickeycredentialuserentity-id
+  // It is RECOMMENDED to let the user handle be 64 random bytes, and store this value in the user’s account.
+  // authentication and authorization decisions MUST be made on the basis of this id member, not the displayName nor name members. 
+  // See Section 6.1 of [RFC8266]
+  localStorage.setItem("user_id", publicKeyCrendentialCreationOptions['user']['id']) // Store the base64 version before decoding
   publicKeyCrendentialCreationOptions['user']['id'] = Uint8Array.from(atob(publicKeyCrendentialCreationOptions['user']['id']));
 
   
@@ -103,6 +114,35 @@ async function createCredential(publicKeyCrendentialCreationOptions) {
     UserVerificationRequirement: {}
   }).then((creds) => { 
     log(creds);
+    // Send PublicKeyCredential to server
+    /* The navigator.credentials.create Promise resolves to an PublicKeyCredential, 
+       which has a PublicKeyCredential.rawId that is the globally unique credential id along with a response 
+       that is the AuthenticatorAttestationResponse containing the AuthenticatorResponse.clientDataJSON and 
+       AuthenticatorAttestationResponse.attestationObject. 
+       The PublicKeyCredential (needs to be) sent back to the server 
+       (note that the ArrayBuffer properties need to be base64 encoded or similar).
+       See: Step 5 of https://developer.mozilla.org/en-US/docs/Web/API/Web_Authentication_API#registration
+    */
+
+    // Encode the ArrayBuffer properties to base64
+    creds['rawId'] = btoa(creds['rawId']);
+    creds['response']['attestationObject'] = btoa(creds['response']['attestationObject']);
+    creds['response']['clientDataJSON'] = btoa(creds['response']['clientDataJSON']);
+
+    fetch('/register/sendAttestationObject', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(creds)
+    }).then(response => response.json())
+    .then(data => {
+      console.log('Success:', data);
+    })
+    .catch((error) => {
+      console.error('Error:', error);
+    });
+    // Show device registration complete
+    document.getElementById("device-registration-complete").style.display = "block";
+    window.scrollTo(0,document.body.scrollHeight);
   });
 }
   

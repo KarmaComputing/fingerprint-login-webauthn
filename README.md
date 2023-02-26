@@ -20,3 +20,8 @@ uvicorn --reload main:app
 ```
 
 Visit: http://localhost:8000/
+
+# Reading
+
+- https://www.w3.org/TR/webauthn-2/
+- https://developer.mozilla.org/en-US/docs/Web/API/Web_Authentication_API#registration
